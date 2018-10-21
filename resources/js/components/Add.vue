@@ -62,7 +62,14 @@ export default {
                 .then((response)=>{
                     $('#exampleModal').modal('hide')
                     this.$parent.lists.push(response.data)
-                    
+                    this.$parent.lists.sort(function(a,b){
+                        if(a.name > b.name){
+                            return 1;
+                        }else if(a.name<b.name){
+                            return -1;
+                        }
+                    })
+                    this.list = ""
                     })                           
                 .catch((err)=>this.errors = err.response.data.errors);
         }

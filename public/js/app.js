@@ -50244,18 +50244,55 @@ var render = function() {
     "div",
     [
       _c("div", { staticClass: "card mb-2" }, [
-        _vm._m(0),
+        _c("div", { staticClass: "card-header" }, [
+          _vm._v("\r\n        Vue js Phone Book\r\n        "),
+          _c(
+            "button",
+            {
+              staticClass: "btn btn-outline-primary",
+              attrs: {
+                type: "button",
+                "data-toggle": "modal",
+                "data-target": "#exampleModal"
+              }
+            },
+            [_vm._v("Add New")]
+          ),
+          _vm._v(" "),
+          _vm.loading
+            ? _c("span", { staticClass: "float-right" }, [
+                _c("i", { staticClass: "fa fa-refresh fa-spin fa-2x fa-fw" })
+              ])
+            : _vm._e()
+        ]),
         _vm._v(" "),
         _c(
           "div",
           { staticClass: "card-body" },
           [
             _c("input", {
+              directives: [
+                {
+                  name: "model",
+                  rawName: "v-model",
+                  value: _vm.searchQuery,
+                  expression: "searchQuery"
+                }
+              ],
               staticClass: "form-control mr-sm-2",
               attrs: {
                 type: "search",
                 placeholder: "Search",
                 "aria-label": "Search"
+              },
+              domProps: { value: _vm.searchQuery },
+              on: {
+                input: function($event) {
+                  if ($event.target.composing) {
+                    return
+                  }
+                  _vm.searchQuery = $event.target.value
+                }
               }
             }),
             _vm._v(" "),
@@ -50265,7 +50302,7 @@ var render = function() {
               )
             ]),
             _vm._v(" "),
-            _vm._l(_vm.lists, function(item, key) {
+            _vm._l(_vm.temp, function(item, key) {
               return _c(
                 "ul",
                 { staticClass: "list-group list-group-flush mb-2" },
@@ -50335,28 +50372,7 @@ var render = function() {
     1
   )
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "card-header" }, [
-      _vm._v("\r\n        Vue js Phone Book\r\n        "),
-      _c(
-        "button",
-        {
-          staticClass: "btn btn-outline-primary",
-          attrs: {
-            type: "button",
-            "data-toggle": "modal",
-            "data-target": "#exampleModal"
-          }
-        },
-        [_vm._v("Add New")]
-      )
-    ])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 module.exports = { render: render, staticRenderFns: staticRenderFns }
 if (false) {
@@ -50771,6 +50787,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
 
 var add = __webpack_require__(60);
 var show = __webpack_require__(64);
@@ -50780,41 +50799,55 @@ var edit = __webpack_require__(67);
         return {
             lists: {},
             errors: {},
-            loading: false
+            loading: false,
+            searchQuery: '',
+            temp: ''
         };
     },
 
+    watch: {
+        searchQuery: function searchQuery() {
+            var _this = this;
 
+            if (this.searchQuery.length > 0) {
+                this.temp = this.lists.filter(function (item) {
+                    return item.name.toLowerCase().indexOf(_this.searchQuery.toLowerCase()) > -1;
+                });
+            } else {
+                this.temp = this.lists;
+            }
+        }
+    },
     components: { add: add, show: show, edit: edit },
     mounted: function mounted() {
-        var _this = this;
+        var _this2 = this;
 
         axios.post('/getData').then(function (response) {
-            return _this.lists = response.data;
+            return _this2.lists = _this2.temp = response.data;
         }).catch(function (err) {
-            return _this.errors = err.response.data.errors;
+            return _this2.errors = err.response.data.errors;
         });
     },
 
     methods: {
         showContact: function showContact(key) {
 
-            this.$children[1].list = this.lists[key];
+            this.$children[1].list = this.temp[key];
         },
         editContact: function editContact(key) {
-            this.$children[2].list = this.lists[key];
+            this.$children[2].list = this.temp[key];
         },
         deleteContact: function deleteContact(key, id) {
-            var _this2 = this;
+            var _this3 = this;
 
             console.log(key);
             if (confirm('Are you sure?')) {
                 this.loading = !this.loading;
                 axios.delete('/phonebook/' + id).then(function (response) {
-                    _this2.lists.splice(key, 1);
-                    _this2.loading = !_this2.loading;
+                    _this3.lists.splice(key, 1);
+                    _this3.loading = !_this3.loading;
                 }).catch(function (err) {
-                    return _this2.errors = err.response.data.errors;
+                    return _this3.errors = err.response.data.errors;
                 });
             }
         }
@@ -50893,6 +50926,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             axios.post('/phonebook', this.$data.list).then(function (response) {
                 $('#exampleModal').modal('hide');
                 _this.$parent.lists.push(response.data);
+                _this.$parent.lists.sort(function (a, b) {
+                    if (a.name > b.name) {
+                        return 1;
+                    } else if (a.name < b.name) {
+                        return -1;
+                    }
+                });
+                _this.list = "";
             }).catch(function (err) {
                 return _this.errors = err.response.data.errors;
             });
